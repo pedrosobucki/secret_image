@@ -3,31 +3,7 @@
 
 void hide_size(Pixel *pixel, unsigned int height, unsigned int width);
 void hide_pixel(char *bs, Pixel tohide);
-
-void retrieve_size(Pixel *pixel, unsigned int *height, unsigned int *width)
-{
-    unsigned int h = 0, w = 0;
-
-    char mask, sinfo; 
-    char *px = pixel;
-
-    for (unsigned int i=0; i < 6; i++) {
-        h <<= 2;
-        sinfo = *px & 0x3;  // retrieves 2 least meaningful bits from color
-        h |= sinfo;
-        px++;
-    }
-
-    for (unsigned int i=0; i < 6; i++) {
-        w <<= 2;
-        sinfo = *px & 0x3;  // retrieves 2 least meaningful bits from color
-        w |= sinfo;
-        px++;
-    }
-
-    *height = h;
-    *width = w;
-}
+void retrieve_size(Pixel *pixel, unsigned int *height, unsigned int *width);
 
 void bin(unsigned n);
 
@@ -94,17 +70,42 @@ int main()
     printf("retrieve size: h %u X w %u\n", height, width);
 }
 
+void retrieve_size(Pixel *pixel, unsigned int *height, unsigned int *width)
+{
+    unsigned int h = 0, w = 0;
+
+    char mask, sinfo; 
+    char *px = pixel;
+
+    for (unsigned int i=0; i < 6; i++) {
+        h <<= 2;
+        sinfo = *px & 0x3;  // retrieves 2 least meaningful bits from color
+        h |= sinfo;
+        px++;
+    }
+
+    for (unsigned int i=0; i < 6; i++) {
+        w <<= 2;
+        sinfo = *px & 0x3;  // retrieves 2 least meaningful bits from color
+        w |= sinfo;
+        px++;
+    }
+
+    *height = h;
+    *width = w;
+}
+
 void hide_pixel(char *bs, Pixel tohide)
 {
     unsigned char color, mask;
     unsigned char *hp = &tohide;
+    unsigned int size = sizeof(tohide)*4;
 
-    for (unsigned int i=0; i < sizeof(tohide)*4; i++) {
+    for (unsigned int i=0; i < size; i++) {
         color = *bs;
         color &= 0xFC;
-        mask = *hp & 0x3;
+        mask = (*hp >> 2*(size-i-1)) & 0x3;
         *bs = color | mask;
-        *hp >>= 2;
         bs++;
     }
 }
@@ -117,16 +118,12 @@ void hide_size(Pixel *pixel, unsigned int height, unsigned int width)
     char mask, rgb; 
     char *px = pixel; // creates pointer to pixel with 1 byte size
 
-    // printf("loop start ---------------\n");
     for (unsigned int i=0; i < 12; i++) {   // since we store 2 secret bits in every byte, we iterate 12 times for 24 bits stored
         rgb = *(px+i);  // stores current pixel ptr value (points to specific color value)
         rgb &= 0xFC;    // clears last 2 bits of color value
         mask = (size >> 22 - 2*i) & 0x3;  // creates mask with only 2 least significant bits from size
-        // printf("%p(%u) -> %02x + %02x = %02x\n", px+i, i, *(px+i), mask, rgb | mask);
         *(px+i) = rgb | mask;   // stores OR between rgb and 2 size bits in color value
-        // size >>= 2; // shifts size value 2 bits to the right, now storing the next 2 bits to be hiden in the least significant bits
     }
-    // printf("loop end---------------\n");
 }
 
 void bin(unsigned n)

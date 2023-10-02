@@ -3,3 +3,4 @@ output/
 hide
 *.bkp*
 encoded.ppm
+decoded.ppm
